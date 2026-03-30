@@ -1,6 +1,7 @@
 from random import randint
 from typing import Optional
 
+
 N_STUDENTS = 10
 START_HOURS = list(range(8, 20))
 DURATION = 1
@@ -62,7 +63,8 @@ class SubjectList():
                 end=start+DURATION
             )
             new_subject.add_group(g)
-            
+            self.current_group_id += 1
+
         self.subjects[name] = new_subject
         print(f"Added subject: {name}, {n_groups} group(s)")
 
@@ -76,21 +78,3 @@ class SubjectList():
     def __str__(self):
         result = [f"{name}: {subject.n_groups} group(s)" for name, subject in self.subjects.items()]
         return "\n== Subject List:\n"+"\n".join(result)
-
-
-# subject_names = [
-#     "Fizyka",
-#     "Systemy operacyjne",
-#     "Sieci komputerowe",
-#     "Inżynieria oprogramowania",
-#     "Teoria obliczeń i złożoności obliczeniowej",
-#     "Badania operacyjne",
-#     "Algorytmy geometryczne"
-# ]
-
-# l = SubjectList()
-# for subject in subject_names:
-#     l.add_subject(subject, randint(1, 3))
-
-# l.remove_subject("Fizyka")
-# print(l)
