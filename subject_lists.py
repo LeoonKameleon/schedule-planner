@@ -2,7 +2,7 @@ from random import randint
 from typing import Optional
 
 
-N_STUDENTS = 10
+N_STUDENTS = 1000
 START_HOURS = list(range(8, 20))
 DURATION = 1
 DAYS = list(range(1, 6))
@@ -34,6 +34,8 @@ class Group():
     def collides(self, other: Group):
         if not isinstance(other, Group):
             raise ValueError("Collision check with a non-group object")
+        if self.day != other.day:
+            return False
         if self.start < other.end and self.end > other.start:
             return True
         return False

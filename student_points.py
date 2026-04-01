@@ -2,7 +2,7 @@ from subject_lists import SubjectList
 from random import randint, sample
 
 
-N_STUDENTS = 10
+N_STUDENTS = 1000
 MIN_LIMIT_S = 1
 MAX_LIMIT_S = 10
 MAX_LIMIT_G = 8

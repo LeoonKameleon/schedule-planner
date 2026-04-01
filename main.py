@@ -1,5 +1,6 @@
 from subject_lists import SubjectList
 from student_points import StudentPoints
+from population import Population
 from random import randint
 
 
@@ -10,12 +11,26 @@ subject_names = [
     "Inżynieria oprogramowania",
     "Teoria obliczeń i złożoności obliczeniowej",
     "Badania operacyjne",
-    "Algorytmy geometryczne"
+    "Algorytmy geometryczne",
+    "Metody obliczeniowe w nauce i technice",
+    "Teoria kompilacji"
 ]
 
-l = SubjectList()
-for subject in subject_names:
-    l.add_subject(subject, randint(1, 2))
+while True:
+    l = SubjectList()
+    for subject in subject_names:
+        l.add_subject(subject, randint(1, 4))
 
-p = StudentPoints(l)
-print(p)
+    p = StudentPoints(l)
+    p.generate()
+
+    population = Population(l, p)
+    try:
+        population.populate()
+        break
+    except RuntimeError:
+        pass
+
+print(l)
+l.view_schedule()
+print(population)
