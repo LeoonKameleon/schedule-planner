@@ -21,7 +21,7 @@ class Population():
         self.students = []
     
     def populate(self):
-        for student in self.student_points.points:
+        for _ in self.student_points.points:
             given_groups = {}
             subjects = list(self.subject_list.subjects.values())
             shuffle(subjects)
@@ -60,7 +60,7 @@ class Population():
     def __str__(self):
         lines = ["== Population:"]
         for i, student in enumerate(self.students):
-            lines.append(f"  Student {i+1}:")
+            lines.append(f"Student {i+1}:")
             for subject, group in student.groups.items():
-                lines.append(f"    {subject.name} -> g{group.id} (day {group.day}, {group.start}:00)")
+                lines.append(f"{subject.name} -> g{group.id} (day {group.day}, {group.start}:00)")
         return "\n".join(lines)
