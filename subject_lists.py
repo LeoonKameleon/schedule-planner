@@ -2,8 +2,8 @@ from random import randint
 from typing import Optional
 
 
-N_STUDENTS = 1000
-START_HOURS = list(range(8, 20))
+N_STUDENTS = 300
+START_HOURS = list(range(8, 15))
 DURATION = 1
 DAYS = list(range(1, 6))
 
@@ -27,6 +27,7 @@ class Group():
         self.id = id
         self.subject = subject
         self.capacity = capacity
+        self.max_capacity = capacity
         self.day = day
         self.start = start
         self.end = end
@@ -88,7 +89,7 @@ class SubjectList():
         slots = {}
         for subject in self.subjects.values():
             for group in subject.groups:
-                slots[(group.day, group.start)] = slots.get((group.day, group.start), []) + [f"{subject.name[:15]} (g{group.id})"]
+                slots[(group.day, group.start)] = slots.get((group.day, group.start), []) + [f"{subject.name[:15]} ({group.max_capacity-group.capacity}/{group.max_capacity})"]
         
         print(f"{'':6}|" + "|".join(f"{d:^{width}}" for d in names))
         print("-" * (7 + (width+1) * 5))

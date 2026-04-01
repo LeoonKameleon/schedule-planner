@@ -19,7 +19,7 @@ subject_names = [
 while True:
     l = SubjectList()
     for subject in subject_names:
-        l.add_subject(subject, randint(1, 4))
+        l.add_subject(subject, randint(20, 20))
 
     p = StudentPoints(l)
     p.generate()
@@ -31,6 +31,6 @@ while True:
     except RuntimeError:
         pass
 
+print(population)
 print(l)
 l.view_schedule()
-print(population)
