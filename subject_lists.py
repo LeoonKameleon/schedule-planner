@@ -14,7 +14,7 @@ class Subject():
         self.groups = []
         self.n_groups = 0
     
-    def add_group(self, group: Group):
+    def add_group(self, group: "Group"):
         self.groups.append(group)
         self.n_groups += 1
 
@@ -32,7 +32,7 @@ class Group():
         self.start = start
         self.end = end
 
-    def collides(self, other: Group):
+    def collides(self, other: "Group") -> bool:
         if not isinstance(other, Group):
             raise ValueError("Collision check with a non-group object")
         if self.day != other.day:
@@ -76,6 +76,11 @@ class SubjectList():
             print(f"Removed {name}, {removed.n_groups} group(s)")
         else:
             print(f"Subject {name} does not exist")
+
+    def reset_capacities(self):
+        for subject in self.subjects.values():
+            for group in subject.groups:
+                group.capacity = group.max_capacity
 
     def view_schedule(self):
         def format_hour(h: float) -> str:
