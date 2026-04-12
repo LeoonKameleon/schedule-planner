@@ -7,12 +7,6 @@ class Student():
     def __init__(self, groups: dict[Subject, Group]):
         self.groups = groups
 
-    def mutate(self):
-        raise NotImplementedError
-    
-    def crossover(self):
-        raise NotImplementedError
-    
 
 class Population():
     def __init__(self, subject_list: SubjectList, student_points: StudentPoints):
