@@ -56,7 +56,8 @@ def build_feasible_parents():
     raise RuntimeError("Could not generate a feasible timetable instance with two parents")
 
 
-def evaluate_crossover(parent_a: Population, parent_b: Population, n_children: int):
+def evaluate_crossover(n_children: int):
+    parent_a, parent_b = build_feasible_parents()
     feasible_children = 0
     for _ in range(n_children):
         child = parent_a.crossover(parent_b)
@@ -69,24 +70,11 @@ def evaluate_crossover(parent_a: Population, parent_b: Population, n_children: i
 
 def main():
     seed(42)
-
-    parent_a, parent_b = build_feasible_parents()
-
-    assert parent_a.is_feasible(), "Parent A should be feasible"
-    assert parent_b.is_feasible(), "Parent B should be feasible"
-
-    feasible_count, feasible_rate = evaluate_crossover(parent_a, parent_b, N_CHILDREN)
+    feasible_count, feasible_rate = evaluate_crossover(N_CHILDREN)
 
     print("== Crossover Benchmark ==")
-    print(f"Parents feasible: A={parent_a.is_feasible()}, B={parent_b.is_feasible()}")
     print(f"Feasible children: {feasible_count}/{N_CHILDREN}")
     print(f"Feasible children rate: {feasible_rate:.2f}%")
-
-    sample_child = parent_a.crossover(parent_b)
-    if sample_child is None:
-        print("Sample child: infeasible")
-    else:
-        print(f"Sample child feasible: {sample_child.is_feasible()}")
 
 
 if __name__ == "__main__":
