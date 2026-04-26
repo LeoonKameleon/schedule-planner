@@ -260,6 +260,80 @@ class Population():
         if not child.is_feasible():
             return None
         return child
+
+    def mutate(self, mutation_rate: float = 0.02):
+        if mutation_rate < 0 or mutation_rate > 1:
+            raise ValueError("mutation_rate must be in range [0, 1]")
+
+        subject_names = list(self.subject_list.subjects.keys())
+
+        child_by_name = []
+        for student in self.students:
+            child_by_name.append({subject.name: group for subject, group in student.groups.items()})
+
+        group_loads = {}
+        group_limits = {}
+        for subject in self.subject_list.subjects.values():
+            for group in subject.groups:
+                group_loads[group.id] = 0
+                group_limits[group.id] = group.max_capacity
+
+        for assignment in child_by_name:
+            for group in assignment.values():
+                group_loads[group.id] += 1
+
+        for student_index, assignment in enumerate(child_by_name):
+            for subject_name in subject_names:
+                if random() >= mutation_rate:
+                    continue
+
+                current_group = assignment[subject_name]
+                subject = self.subject_list.subjects[subject_name]
+
+                candidates = [group for group in subject.groups if group.id != current_group.id]
+                shuffle(candidates)
+
+                # Keep mutation local: change a gene only when it remains feasible.
+                for candidate in candidates:
+                    if self._collides_with_plan(assignment, candidate, skip_subject=subject_name):
+                        continue
+
+                    if group_loads[candidate.id] < group_limits[candidate.id]:
+                        assignment[subject_name] = candidate
+                        group_loads[current_group.id] -= 1
+                        group_loads[candidate.id] += 1
+                        break
+
+                    # If target group is full, try a one-step swap with one occupant.
+                    swap_candidates = [
+                        i for i, other_assignment in enumerate(child_by_name)
+                        if i != student_index and other_assignment[subject_name].id == candidate.id
+                    ]
+                    shuffle(swap_candidates)
+
+                    swapped = False
+                    for other_index in swap_candidates:
+                        other_assignment = child_by_name[other_index]
+                        if self._collides_with_plan(other_assignment, current_group, skip_subject=subject_name):
+                            continue
+
+                        assignment[subject_name] = candidate
+                        other_assignment[subject_name] = current_group
+                        swapped = True
+                        break
+
+                    if swapped:
+                        break
+
+        child = Population(self.subject_list, self.student_points)
+        for assignment in child_by_name:
+            child.students.append(
+                Student({self.subject_list.subjects[name]: group for name, group in assignment.items()})
+            )
+
+        if not child.is_feasible():
+            return None
+        return child
     
     def __str__(self):
         lines = ["== Population:"]
