@@ -33,4 +33,4 @@ while True:
 
 print(schedule)
 print(l)
-l.view_schedule()
+schedule.view_schedule()

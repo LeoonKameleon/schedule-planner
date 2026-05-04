@@ -17,7 +17,11 @@ class Schedule():
     def populate(self):
         # Rebuild this schedule from scratch on fresh capacities.
         self.students = []
-        self.subject_list.reset_capacities()
+        
+        capacity_left = {}
+        for subject in self.subject_list.subjects.values():
+            for group in subject.groups:
+                capacity_left[group.id] = group.max_capacity
 
         for _ in self.student_points.points:
             given_groups = {}
@@ -32,7 +36,7 @@ class Schedule():
                 shuffle(subject.groups)
 
                 for group in subject.groups:
-                    if group.capacity > 0:
+                    if capacity_left[group.id] > 0:
                         # Reject groups that collide with already chosen classes for this student.
                         collides = False
                         for g in given_groups.values():
@@ -42,13 +46,13 @@ class Schedule():
                         
                         if not collides:
                             given_groups[subject] = group
-                            group.capacity -= 1
+                            capacity_left[group.id] -= 1
 
                             if backtrack(subjects, given_groups):
                                 return True
 
                             given_groups.pop(subject)
-                            group.capacity += 1
+                            capacity_left[group.id] += 1
                 return False
 
             if backtrack(subjects, given_groups):
@@ -255,6 +259,47 @@ class Schedule():
             return None
         return child
     
+    
+
+    def view_schedule(self):
+        from subject_lists import START_HOURS, DAYS
+        
+        def format_hour(h: float) -> str:
+            hours = int(h)
+            minutes = int((h % 1) * 60)
+            return f"{hours:02}:{minutes:02}"
+        
+        names = ["Mon", "Tue", "Wed", "Thu", "Fri"]
+        width = 25
+        
+        # Oblicz zajętość dla tego konkretnego osobnika
+        group_loads = {}
+        for subject in self.subject_list.subjects.values():
+            for group in subject.groups:
+                group_loads[group.id] = 0
+                
+        for student in self.students:
+            for group in student.groups.values():
+                group_loads[group.id] += 1
+                
+        slots = {}
+        for subject in self.subject_list.subjects.values():
+            for group in subject.groups:
+                load = group_loads[group.id]
+                slots[(group.day, group.start)] = slots.get((group.day, group.start), []) + [f"{subject.name[:15]} ({load}/{group.max_capacity})"]
+        
+        print(f"{'':6}|" + "|".join(f"{d:^{width}}" for d in names))
+        print("-" * (7 + (width+1) * 5))
+        for hour in START_HOURS:
+            n = max(len(slots.get((day, hour), [])) for day in DAYS)
+            if n == 0:
+                continue
+            for i in range(n):
+                row = f"{format_hour(hour):6}|" if i == 0 else f"{'':6}|"
+                row += "|".join(f"{slots.get((day, hour), [])[i] if i < len(slots.get((day, hour), [])) else '':^{width}}" for day in DAYS)
+                print(row)
+            print("-" * (7 + (width+1) * 5))
+
     def __str__(self):
         lines = ["== Schedule:"]
         for i, student in enumerate(self.students):
