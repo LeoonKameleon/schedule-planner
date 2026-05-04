@@ -26,7 +26,6 @@ class Group():
     def __init__(self, id: int, subject: Subject, capacity: int, day: int, start: int, end: int):
         self.id = id
         self.subject = subject
-        self.capacity = capacity
         self.max_capacity = capacity
         self.day = day
         self.start = start
@@ -76,38 +75,6 @@ class SubjectList():
             print(f"Removed {name}, {removed.n_groups} group(s)")
         else:
             print(f"Subject {name} does not exist")
-
-    def reset_capacities(self):
-        for subject in self.subjects.values():
-            for group in subject.groups:
-                group.capacity = group.max_capacity
-
-    def view_schedule(self):
-        def format_hour(h: float) -> str:
-            hours = int(h)
-            minutes = int((h % 1) * 60)
-            return f"{hours:02}:{minutes:02}"
-        
-        names = ["Mon", "Tue", "Wed", "Thu", "Fri"]
-        width = 25
-        
-        slots = {}
-        for subject in self.subjects.values():
-            for group in subject.groups:
-                slots[(group.day, group.start)] = slots.get((group.day, group.start), []) + [f"{subject.name[:15]} ({group.max_capacity-group.capacity}/{group.max_capacity})"]
-        
-        print(f"{'':6}|" + "|".join(f"{d:^{width}}" for d in names))
-        print("-" * (7 + (width+1) * 5))
-        for hour in START_HOURS:
-            n = max(len(slots.get((day, hour), [])) for day in DAYS)
-            if n == 0:
-                continue
-            for i in range(n):
-                row = f"{format_hour(hour):6}|" if i == 0 else f"{'':6}|"
-                row += "|".join(f"{slots.get((day, hour), [])[i] if i < len(slots.get((day, hour), [])) else '':^{width}}" for day in DAYS)
-                print(row)
-            print("-" * (7 + (width+1) * 5))
-        
 
     def __str__(self):
         result = [f"{name}: {subject.n_groups} group(s)" for name, subject in self.subjects.items()]
