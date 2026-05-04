@@ -8,14 +8,14 @@ class Student():
         self.groups = groups
 
 
-class Population():
+class Schedule():
     def __init__(self, subject_list: SubjectList, student_points: StudentPoints):
         self.subject_list = subject_list
         self.student_points = student_points
         self.students = []
     
     def populate(self):
-        # Rebuild this population from scratch on fresh capacities.
+        # Rebuild this schedule from scratch on fresh capacities.
         self.students = []
         self.subject_list.reset_capacities()
 
@@ -108,7 +108,7 @@ class Population():
 
         return True
 
-    def crossover(self, other: "Population"):
+    def crossover(self, other: "Schedule"):
         if self.subject_list is not other.subject_list:
             raise ValueError("Parents must share the same SubjectList instance")
         if len(self.students) != len(other.students):
@@ -245,7 +245,7 @@ class Population():
                 # This crossover attempt failed to repair all conflicts.
                 return None
 
-        child = Population(self.subject_list, self.student_points)
+        child = Schedule(self.subject_list, self.student_points)
         for assignment in child_by_name:
             child.students.append(
                 Student({self.subject_list.subjects[name]: group for name, group in assignment.items()})
@@ -256,7 +256,7 @@ class Population():
         return child
     
     def __str__(self):
-        lines = ["== Population:"]
+        lines = ["== Schedule:"]
         for i, student in enumerate(self.students):
             lines.append(f"Student {i+1}:")
             for subject, group in student.groups.items():
