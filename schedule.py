@@ -1,6 +1,6 @@
 from student_points import StudentPoints
 from subject_lists import Group, Subject, SubjectList
-from random import random, shuffle
+from random import random, shuffle, randint
 
 
 class Student():
@@ -12,7 +12,7 @@ class Schedule():
     def __init__(self, subject_list: SubjectList, student_points: StudentPoints):
         self.subject_list = subject_list
         self.student_points = student_points
-        self.students = []
+        self.students: list[Student] = []
     
     def populate(self):
         # Rebuild this schedule from scratch on fresh capacities.
@@ -65,9 +65,9 @@ class Schedule():
         return self.student_points.points[student_id].get(group_id, 0)
 
     @staticmethod
-    def _collides_with_plan(plan: dict[str, Group], candidate: Group, skip_subject: str | None = None):
-        for subject_name, group in plan.items():
-            if skip_subject is not None and subject_name == skip_subject:
+    def _collides_with_plan(plan: dict[Subject, Group], candidate: Group, skip_subject: Subject | None = None):
+        for subject, group in plan.items():
+            if skip_subject is not None and subject == skip_subject:
                 continue
             if candidate.collides(group):
                 return True
@@ -119,42 +119,38 @@ class Schedule():
             raise ValueError("Parents must have the same number of students")
 
         # Work on free seats counters, independent from mutable Group.capacity state.
-        subject_names = list(self.subject_list.subjects.keys())
+        subjects = list(self.subject_list.subjects.values())
         capacity_left = {}
         occupants = {}
-        for subject in self.subject_list.subjects.values():
+        for subject in subjects:
             for group in subject.groups:
                 capacity_left[group.id] = group.max_capacity
                 occupants[group.id] = set()
 
-        # Convert student plans to subject-name keys to simplify lookups during repair.
-        parent_a = []
-        parent_b = []
-        for student in self.students:
-            parent_a.append({subject.name: group for subject, group in student.groups.items()})
-        for student in other.students:
-            parent_b.append({subject.name: group for subject, group in student.groups.items()})
+        # Just take the original dictionaries of each student.
+        parent_a = [student.groups for student in self.students]
+        parent_b = [student.groups for student in other.students]
 
-        child_by_name = [dict() for _ in self.students]
+        child_by_subject = [dict() for _ in self.students]
         unresolved = []
 
-        def assign(student_index: int, subject_name: str, group: Group):
+        def assign(student_index: int, subject: Subject, group: Group):
             # Centralized assign keeps all bookkeeping structures consistent.
-            child_by_name[student_index][subject_name] = group
+            child_by_subject[student_index][subject] = group
             capacity_left[group.id] -= 1
             occupants[group.id].add(student_index)
 
-        def unassign(student_index: int, subject_name: str):
-            old_group = child_by_name[student_index].pop(subject_name)
+        def unassign(student_index: int, subject: Subject):
+            old_group = child_by_subject[student_index].pop(subject)
             capacity_left[old_group.id] += 1
             occupants[old_group.id].discard(student_index)
 
         # First pass: inherit from parents where possible, if not, mark for repair in unresolved.
         for student_index in range(len(self.students)):
-            plan = child_by_name[student_index]
-            for subject_name in subject_names:
-                group_a = parent_a[student_index][subject_name]
-                group_b = parent_b[student_index][subject_name]
+            plan = child_by_subject[student_index]
+            for subject in subjects:
+                group_a = parent_a[student_index][subject]
+                group_b = parent_b[student_index][subject]
 
                 # Order because if one fail we try the other before marking as unresolved.
                 candidate_order = [group_a] if group_a.id == group_b.id else ([group_a, group_b] if random() < 0.5 else [group_b, group_a])
@@ -169,21 +165,20 @@ class Schedule():
                     break
 
                 if chosen is not None:
-                    assign(student_index, subject_name, chosen)
+                    assign(student_index, subject, chosen)
                 else:
                     # Leave unresolved genes for the repair phase.
-                    unresolved.append((student_index, subject_name))
+                    unresolved.append((student_index, subject))
 
         # Repair pass: greedy assignment with one-step ejection chains.
-        for student_index, subject_name in unresolved:
+        for student_index, subject in unresolved:
             # Sanity check - make sure this subject is not assinged
-            if subject_name in child_by_name[student_index]:
+            if subject in child_by_subject[student_index]:
                 continue
 
 
             # Sort groups by candidate's preference and try to assign in that order.
-            subject = self.subject_list.subjects[subject_name]
-            plan = child_by_name[student_index]
+            plan = child_by_subject[student_index]
             ranked_groups = sorted(
                 subject.groups,
                 key=lambda g: self._points_for(student_index, g.id),
@@ -198,7 +193,7 @@ class Schedule():
                     continue
                 if self._collides_with_plan(plan, candidate):
                     continue
-                assign(student_index, subject_name, candidate)
+                assign(student_index, subject, candidate)
                 placed = True
                 break
 
@@ -214,7 +209,7 @@ class Schedule():
                 displaced_students = list(occupants[target.id])
                 shuffle(displaced_students)
                 for displaced_index in displaced_students:
-                    displaced_plan = child_by_name[displaced_index]
+                    displaced_plan = child_by_subject[displaced_index]
 
                     alternatives = sorted(
                         subject.groups,
@@ -228,13 +223,13 @@ class Schedule():
                             continue
                         if capacity_left[alt.id] <= 0:
                             continue
-                        if self._collides_with_plan(displaced_plan, alt, skip_subject=subject_name):
+                        if self._collides_with_plan(displaced_plan, alt, skip_subject=subject):
                             continue
 
                         # Perform the swap only after confirming a valid alternative.
-                        unassign(displaced_index, subject_name)
-                        assign(displaced_index, subject_name, alt)
-                        assign(student_index, subject_name, target)
+                        unassign(displaced_index, subject)
+                        assign(displaced_index, subject, alt)
+                        assign(student_index, subject, target)
                         moved = True
                         placed = True
                         break
@@ -250,16 +245,84 @@ class Schedule():
                 return None
 
         child = Schedule(self.subject_list, self.student_points)
-        for assignment in child_by_name:
-            child.students.append(
-                Student({self.subject_list.subjects[name]: group for name, group in assignment.items()})
-            )
+        for assignment in child_by_subject:
+            child.students.append(Student(assignment))
 
         if not child.is_feasible():
             return None
         return child
     
-    
+    # Schedule copy
+    def clone(self) -> "Schedule":
+        new_schedule = Schedule(self.subject_list, self.student_points)
+        for student in self.students:
+            # Subject and Group stay original because they are immutable and just define the problem
+            new_schedule.students.append(Student(dict(student.groups)))
+        return new_schedule
+
+    def reliable_crossover(self, other: "Schedule", max_attempts: int = 10) -> "Schedule":
+        """
+        Attempts to perform normal crossover up to max_attempts times,
+        if it fails it falls back to a safe approach:
+        copy one of the parents and mutate it.
+        """
+        for _ in range(max_attempts):
+            child = self.crossover(other)
+            if child is not None:
+                return child
+        
+        # fallback
+        parent = self if random() < 0.5 else other
+        child = parent.clone()
+
+        # mutate child
+        child.reliable_mutation(0.5)
+
+        return child
+
+    def reliable_mutation(self, mutation_rate: float = 0.1):
+        """
+        Peforms a reliable mutation by 1 to 1 swaps groups between students.
+        """
+        subjects = list(self.subject_list.subjects.values())
+
+        SWAPS = round(len(self.students) * len(subjects) * mutation_rate)
+        MAX_ATTEMPTS = SWAPS * 100
+        swaps = 0
+        attempts = 0
+
+        while swaps < SWAPS and attempts < MAX_ATTEMPTS:
+            student_a = self.students[randint(0, len(self.students)-1)]
+            student_b = self.students[randint(0, len(self.students)-1)]
+            
+            # easiest and fastest way to ensure we choose two different students
+            # this is not a failed swap attempt, so we don't count it towards attempts
+            if student_a == student_b:
+                continue
+
+            subject = subjects[randint(0, len(subjects)-1)]
+
+            group_a = student_a.groups[subject]
+            group_b = student_b.groups[subject]
+
+            if group_a.id == group_b.id:
+                attempts += 1
+                continue
+
+            # Check if swap is feasible
+            if self._collides_with_plan(student_a.groups, group_b, skip_subject=subject) or \
+                self._collides_with_plan(student_b.groups, group_a, skip_subject=subject):
+                attempts += 1
+                continue
+
+            # Perform swap
+            student_a.groups[subject] = group_b
+            student_b.groups[subject] = group_a
+
+            swaps += 1
+            attempts += 1
+
+        return
 
     def view_schedule(self):
         from subject_lists import START_HOURS, DAYS
