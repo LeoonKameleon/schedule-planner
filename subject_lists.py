@@ -2,7 +2,7 @@ from random import randint
 from typing import Optional
 
 
-N_STUDENTS = 300
+N_STUDENTS = 200
 START_HOURS = list(range(8, 15))
 DURATION = 1
 DAYS = list(range(1, 6))
@@ -46,7 +46,7 @@ class SubjectList():
         self.subjects = subjects if subjects else {}
         self.current_group_id = 1
     
-    def add_subject(self, name: str, n_groups: int):
+    def add_subject(self, name: str, n_groups: int, verbose: bool = False):
         new_subject = Subject(name)
     
         base_capacity = N_STUDENTS // n_groups
@@ -67,12 +67,14 @@ class SubjectList():
             self.current_group_id += 1
 
         self.subjects[name] = new_subject
-        print(f"Added subject: {name}, {n_groups} group(s)")
+        if verbose:
+            print(f"Added subject: {name}, {n_groups} group(s)")
 
-    def remove_subject(self, name: str):
+    def remove_subject(self, name: str, verbose: bool = False):
         if name in self.subjects:
             removed = self.subjects.pop(name)
-            print(f"Removed {name}, {removed.n_groups} group(s)")
+            if verbose:
+                print(f"Removed {name}, {removed.n_groups} group(s)")
         else:
             print(f"Subject {name} does not exist")
 
