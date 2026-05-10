@@ -2,17 +2,37 @@ from student_points import StudentPoints
 from subject_lists import Group, Subject, SubjectList
 from random import random, shuffle, randint
 
+ALPHA = 0.15
+BETA = 0.2
 
 class Student():
-    def __init__(self, groups: dict[Subject, Group]):
+    def __init__(self, groups: dict[Subject, Group], fitness: float = 0):
         self.groups = groups
+        self.fitness = fitness
 
+    def set_fitness(self, fitness: float):
+        self.fitness = fitness
 
 class Schedule():
     def __init__(self, subject_list: SubjectList, student_points: StudentPoints):
         self.subject_list = subject_list
         self.student_points = student_points
         self.students: list[Student] = []
+
+        self.fitness = None
+        self.satisfaction = None
+        self.total_max_points = self._calculate_total_max_points()
+
+    def _calculate_total_max_points(self) -> float:
+        total = 0
+        for student_id in self.student_points.points:
+            student_max = 0
+            for subject in self.subject_list.subjects.values():
+                pts = [self.student_points.points[student_id].get(g.id, 0) for g in subject.groups]
+                if pts:
+                    student_max += max(pts)
+            total += student_max
+        return total
     
     def populate(self):
         # Rebuild this schedule from scratch on fresh capacities.
@@ -23,7 +43,7 @@ class Schedule():
             for group in subject.groups:
                 capacity_left[group.id] = group.max_capacity
 
-        for _ in self.student_points.points:
+        for student_id in self.student_points.points:
             given_groups = {}
             subjects = list(self.subject_list.subjects.values())
             shuffle(subjects)
@@ -56,13 +76,69 @@ class Schedule():
                 return False
 
             if backtrack(subjects, given_groups):
-                self.students.append(Student(given_groups))
+                fitness = self._calculate_student_fitness(student_id - 1, given_groups)
+                self.students.append(Student(given_groups, fitness))
             else:
                 raise RuntimeError("Unable to assign schedule for all students")
+            
+            self.invalidate_cache()
 
     def _points_for(self, student_index: int, group_id: int):
         student_id = student_index + 1
         return self.student_points.points[student_id].get(group_id, 0)
+    
+    def invalidate_cache(self):
+        self.fitness = None
+        self.satisfaction = None
+    
+    def _calculate_student_fitness(self, student_index: int, groups: dict[Subject, Group]) -> float:
+        start = [100.0 for _ in range(5)]
+        end = [0.0 for _ in range(5)]
+        score = 0.0
+        
+        for subject, group in groups.items():
+            score += self._points_for(student_index, group.id)
+            
+            day_idx = group.day - 1
+            if group.start < start[day_idx]:
+                start[day_idx] = group.start
+            if group.end > end[day_idx]:
+                end[day_idx] = group.end
+        
+        span_penalty = 0.0
+        for i in range(5):
+            if end[i] > 0:
+                span_penalty += (end[i] - start[i])
+        
+        return score - ALPHA * span_penalty
+
+    def calculate_satisfaction(self) -> float:
+        if self.satisfaction is not None:
+            return self.satisfaction
+        
+        # calculate total points given to students
+        total_earned = sum(
+            sum(self.student_points.points[i+1].get(g.id, 0) for g in s.groups.values())
+            for i, s in enumerate(self.students)
+        )
+        
+        self.satisfaction = total_earned / self.total_max_points if self.total_max_points > 0 else 0
+        return self.satisfaction
+    
+    def calculate_schedule_fitness(self) -> float:
+        if self.fitness is not None:
+            return self.fitness
+
+        satisfaction = self.calculate_satisfaction()
+
+        # if satisfaction < BETA, set the fitness to satisfaction ([0, 1]) which is much lower value
+        if satisfaction < BETA:
+            self.fitness = satisfaction
+            return self.fitness
+
+        # otherwise calculate proper fitness value based on students' fitness            
+        self.fitness = sum(student.fitness for student in self.students)
+        return self.fitness
 
     @staticmethod
     def _collides_with_plan(plan: dict[Subject, Group], candidate: Group, skip_subject: Subject | None = None):
@@ -245,8 +321,9 @@ class Schedule():
                 return None
 
         child = Schedule(self.subject_list, self.student_points)
-        for assignment in child_by_subject:
-            child.students.append(Student(assignment))
+        for i, assignment in enumerate(child_by_subject):
+            fitness = self._calculate_student_fitness(i, assignment)
+            child.students.append(Student(assignment, fitness))
 
         if not child.is_feasible():
             return None
@@ -256,8 +333,8 @@ class Schedule():
     def clone(self) -> "Schedule":
         new_schedule = Schedule(self.subject_list, self.student_points)
         for student in self.students:
-            # Subject and Group stay original because they are immutable and just define the problem
-            new_schedule.students.append(Student(dict(student.groups)))
+            # Subject, Group and fitness stay original because they are immutable and just define the problem
+            new_schedule.students.append(Student(dict(student.groups), student.fitness))
         return new_schedule
 
     def reliable_crossover(self, other: "Schedule", max_attempts: int = 10) -> "Schedule":
@@ -319,9 +396,17 @@ class Schedule():
             student_a.groups[subject] = group_b
             student_b.groups[subject] = group_a
 
+            # Update student fitness
+            idx_a = self.students.index(student_a)
+            idx_b = self.students.index(student_b)
+
+            student_a.set_fitness(self._calculate_student_fitness(idx_a, student_a.groups))
+            student_b.set_fitness(self._calculate_student_fitness(idx_b, student_b.groups))
+
             swaps += 1
             attempts += 1
 
+        self.invalidate_cache()
         return
 
     def view_schedule(self):
