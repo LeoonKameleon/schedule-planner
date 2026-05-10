@@ -1,6 +1,6 @@
 from subject_lists import SubjectList
 from student_points import StudentPoints
-from population import Population
+from schedule import Schedule
 from random import randint
 
 
@@ -24,13 +24,13 @@ while True:
     p = StudentPoints(l)
     p.generate()
 
-    population = Population(l, p)
+    schedule = Schedule(l, p)
     try:
-        population.populate()
+        schedule.populate()
         break
     except RuntimeError:
         pass
 
-print(population)
+print(schedule)
 print(l)
-l.view_schedule()
+schedule.view_schedule()

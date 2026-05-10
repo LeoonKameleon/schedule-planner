@@ -1,6 +1,6 @@
 from random import seed
 
-from population import Population
+from schedule import Schedule
 from student_points import StudentPoints
 from subject_lists import SubjectList
 
@@ -30,15 +30,15 @@ def build_subject_list():
     return subject_list
 
 
-def build_population(subject_list: SubjectList, points: StudentPoints):
+def build_schedule(subject_list: SubjectList, points: StudentPoints):
     for _ in range(MAX_PARENT_ATTEMPTS):
-        population = Population(subject_list, points)
+        schedule = Schedule(subject_list, points)
         try:
-            population.populate()
-            return population
+            schedule.populate()
+            return schedule
         except RuntimeError:
             continue
-    raise RuntimeError("Could not generate a feasible parent population")
+    raise RuntimeError("Could not generate a feasible parent schedule")
 
 
 def build_feasible_parents():
@@ -47,8 +47,8 @@ def build_feasible_parents():
         points = StudentPoints(subject_list)
 
         try:
-            parent_a = build_population(subject_list, points)
-            parent_b = build_population(subject_list, points)
+            parent_a = build_schedule(subject_list, points)
+            parent_b = build_schedule(subject_list, points)
             return parent_a, parent_b
         except RuntimeError:
             continue
