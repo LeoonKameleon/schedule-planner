@@ -1,12 +1,13 @@
 from random import randint
 from typing import Optional
 
+from config_loader import config
 
-N_STUDENTS = 200
-START_HOURS = list(range(8, 15))
-DURATION = 1
-DAYS = list(range(1, 6))
 
+N_STUDENTS = config["N_STUDENTS"]
+START_HOURS = config["START_HOURS"]
+DURATION = config["DURATION"]
+DAYS = config["DAYS"]
 
 class Subject():
     def __init__(self, name: str):
