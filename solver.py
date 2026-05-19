@@ -7,9 +7,6 @@ from tqdm import tqdm
 from config_loader import config
 
 
-MUTATION_PROBABILITY = config["MUTATION_PROBABILITY"]
-MUTATION_RATE = config["MUTATION_RATE"]
-
 class Solver:
     def __init__(self, subject_list: SubjectList, student_points: StudentPoints, population_size: int = 20):
         self.subject_list = subject_list
@@ -89,8 +86,8 @@ class Solver:
                 
                 # mutate with given probability
                 if child:
-                    if random.random() < MUTATION_PROBABILITY:
-                        child.reliable_mutation(mutation_rate=MUTATION_RATE)
+                    if random.random() < config["MUTATION_PROBABILITY"]:
+                        child.reliable_mutation(mutation_rate=config["MUTATION_RATE"])
                     new_generation.append(child)
 
             # swap out the previous population

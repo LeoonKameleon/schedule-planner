@@ -4,9 +4,6 @@ from random import random, shuffle, randint
 from config_loader import config
 
 
-ALPHA = config["ALPHA"]
-BETA = config["ALPHA"]
-
 class Student():
     def __init__(self, groups: dict[Subject, Group], fitness: float = 0):
         self.groups = groups
@@ -112,7 +109,7 @@ class Schedule():
             if end[i] > 0:
                 span_penalty += (end[i] - start[i])
         
-        return score - ALPHA * span_penalty
+        return score - config["ALPHA"] * span_penalty
 
     def calculate_satisfaction(self) -> float:
         if self.satisfaction is not None:
@@ -134,7 +131,7 @@ class Schedule():
         satisfaction = self.calculate_satisfaction()
 
         # if satisfaction < BETA, set the fitness to satisfaction ([0, 1]) which is much lower value
-        if satisfaction < BETA:
+        if satisfaction < config["BETA"]:
             self.fitness = satisfaction
             return self.fitness
 
@@ -412,8 +409,6 @@ class Schedule():
         return
 
     def view_schedule(self):
-        from subject_lists import START_HOURS, DAYS
-        
         def format_hour(h: float) -> str:
             hours = int(h)
             minutes = int((h % 1) * 60)
@@ -440,13 +435,13 @@ class Schedule():
         
         print(f"{'':6}|" + "|".join(f"{d:^{width}}" for d in names))
         print("-" * (7 + (width+1) * 5))
-        for hour in START_HOURS:
-            n = max(len(slots.get((day, hour), [])) for day in DAYS)
+        for hour in config["START_HOURS"]:
+            n = max(len(slots.get((day, hour), [])) for day in config["DAYS"])
             if n == 0:
                 continue
             for i in range(n):
                 row = f"{format_hour(hour):6}|" if i == 0 else f"{'':6}|"
-                row += "|".join(f"{slots.get((day, hour), [])[i] if i < len(slots.get((day, hour), [])) else '':^{width}}" for day in DAYS)
+                row += "|".join(f"{slots.get((day, hour), [])[i] if i < len(slots.get((day, hour), [])) else '':^{width}}" for day in config["DAYS"])
                 print(row)
             print("-" * (7 + (width+1) * 5))
 

@@ -1,13 +1,7 @@
-from random import randint
+from random import randint, choice
 from typing import Optional
 
 from config_loader import config
-
-
-N_STUDENTS = config["N_STUDENTS"]
-START_HOURS = config["START_HOURS"]
-DURATION = config["DURATION"]
-DAYS = config["DAYS"]
 
 class Subject():
     def __init__(self, name: str):
@@ -50,19 +44,19 @@ class SubjectList():
     def add_subject(self, name: str, n_groups: int, verbose: bool = False):
         new_subject = Subject(name)
     
-        base_capacity = N_STUDENTS // n_groups
-        remainder = N_STUDENTS % n_groups
+        base_capacity = config["N_STUDENTS"] // n_groups
+        remainder = config["N_STUDENTS"] % n_groups
         
         for i in range(n_groups):
             current_capacity = base_capacity + (1 if i < remainder else 0)
-            start = START_HOURS[randint(0, len(START_HOURS)-1)]
+            start = config["START_HOURS"][randint(0, len(config["START_HOURS"])-1)]
             g = Group(
                 id=self.current_group_id,
                 subject=new_subject,
                 capacity=current_capacity,
-                day=randint(1, 5),
+                day=choice(config["DAYS"]),
                 start=start,
-                end=start+DURATION
+                end=start+config["DURATION"]
             )
             new_subject.add_group(g)
             self.current_group_id += 1
