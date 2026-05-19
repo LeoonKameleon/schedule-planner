@@ -1,9 +1,11 @@
 from student_points import StudentPoints
 from subject_lists import Group, Subject, SubjectList
 from random import random, shuffle, randint
+from config_loader import config
 
-ALPHA = 0.15
-BETA = 0.2
+
+ALPHA = config["ALPHA"]
+BETA = config["ALPHA"]
 
 class Student():
     def __init__(self, groups: dict[Subject, Group], fitness: float = 0):

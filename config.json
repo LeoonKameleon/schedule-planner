@@ -1,0 +1,17 @@
+{
+  "N_STUDENTS": 100,
+  "MIN_LIMIT_S": 1,
+  "MAX_LIMIT_S": 10,
+  "MAX_LIMIT_G": 8,
+  "START_HOURS": [8, 9, 10, 11, 12, 13, 14],
+  "DURATION": 1,
+  "DAYS": [1, 2, 3, 4, 5],
+  "ALPHA": 0.25,
+  "BETA": 0.5,
+  "MUTATION_PROBABILITY": 0.2,
+  "MUTATION_RATE": 0.1,
+  "POPULATION_SIZE": 1000,
+  "GENERATIONS": 600,
+  "PRESERVE_BEST": 5,
+  "SEED": 1000
+}

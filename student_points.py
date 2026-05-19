@@ -1,11 +1,13 @@
-from subject_lists import SubjectList
 from random import randint, sample
 
+from subject_lists import SubjectList
+from config_loader import config
 
-N_STUDENTS = 200
-MIN_LIMIT_S = 1
-MAX_LIMIT_S = 10
-MAX_LIMIT_G = 8
+
+N_STUDENTS = config["N_STUDENTS"]
+MIN_LIMIT_S = config["MIN_LIMIT_S"]
+MAX_LIMIT_S = config["MAX_LIMIT_S"]
+MAX_LIMIT_G = config["MAX_LIMIT_G"]
 
 class StudentPoints():
     def __init__(self, subject_list: SubjectList):

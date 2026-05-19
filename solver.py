@@ -1,11 +1,14 @@
+import random
+
 from subject_lists import SubjectList
 from student_points import StudentPoints
 from schedule import Schedule
 from tqdm import tqdm
-import random
+from config_loader import config
 
-MUTATION_PROBABILITY = 0.15
-MUTATION_RATE = 0.1
+
+MUTATION_PROBABILITY = config["MUTATION_PROBABILITY"]
+MUTATION_RATE = config["MUTATION_RATE"]
 
 class Solver:
     def __init__(self, subject_list: SubjectList, student_points: StudentPoints, population_size: int = 20):
@@ -14,7 +17,7 @@ class Solver:
         self.population_size = population_size
         self.population: list[Schedule] = []
 
-        pbar = tqdm(total=population_size, desc="Building Population")
+        pbar = tqdm(total=population_size, desc="Building population")
         while len(self.population) < population_size:
             schedule = Schedule(self.subject_list, self.student_points)
             try:
@@ -64,7 +67,7 @@ class Solver:
             best_fitness = best_schedule.calculate_schedule_fitness()
             avg_fitness = best_fitness / len(self.population[0].students)
 
-            print(f"Generation {gen:3}: Best fitness = {best_fitness:8.2f} | Avg fitness = {avg_fitness:5.2f}")
+            print(f"Generation {gen:3}: Best fitness = {best_fitness:8.2f} | Avg student fitness = {avg_fitness:5.2f}")
 
             # preserve the top `preserve_best` schedules
             new_generation = self.population[:preserve_best]
@@ -72,8 +75,8 @@ class Solver:
             while len(new_generation) < self.population_size:
                 # select schedules to crossover
                 if mode == "tournament":
-                    p1 = self._tournament_selection(k=5)
-                    p2 = self._tournament_selection(k=5)
+                    p1 = self._tournament_selection()
+                    p2 = self._tournament_selection()
                 else:
                     p1 = self._roulette_selection()
                     p2 = self._roulette_selection()
